@@ -587,8 +587,6 @@ class ServerApp :
                 db.sql_begin_write()
                 self._logger.error( "fail in get session argv" ) # @@
                 db.sql_update(sql.EXECUTION_FAIL, (sessionexc, '', execid))
-                if sessionlog :
-                    db.sql_insert(sql.INSERT_LOG, (datetime.datetime.now(), execid, self._encode_log(sessionlog)))
                 db.sql_update(sql.SUBMISSION_FAIL, (submid,))
             except:
                 self._logger.error( "Error storing failed execution %s" % execid)
@@ -605,6 +603,15 @@ class ServerApp :
                 self._logger.error(traceback.format_exc())
             finally:
                 db.sql_end()
+                
+        if sessionlog :
+          try:
+            db.sql_begin_write()
+            db.sql_insert(sql.INSERT_LOG, (datetime.datetime.now(), execid, self._encode_log(sessionlog)))
+          except:
+            self._logger.error(traceback.format_exc())
+          finally:
+            db.sql_end()
             
         return sessionargv, sessionexc
     
@@ -669,8 +676,6 @@ class ServerApp :
                         db.sql_begin_write()
                         self._logger.error( "fail in run_session" ) # @@
                         db.sql_update(sql.EXECUTION_FAIL, (execexc, '', execid))
-                        if execlog or execstdout :
-                            db.sql_insert(sql.INSERT_LOG, (datetime.datetime.now(), execid, self._encode_log(execlog+execstdout)))
                         db.sql_update(sql.SUBMISSION_FAIL, (submid,))
                     except:
                         self._logger.error( "Error storing failed execution %s" % (execid))
@@ -681,8 +686,16 @@ class ServerApp :
                     # data will be stored to the database when the results are returned
                     # by an asynchronous call to apply_results()
                     pass
+                  
+                if execlog or execstdout :
+                    self._logger.error( execlog+execstdout ) # @@
+                    db = self._db.clone() # necessary for threading with sqlite
+                    try:    
+                        db.sql_begin_write()
+                        db.sql_insert(sql.INSERT_LOG, (datetime.datetime.now(), execid, self._encode_log(execlog+execstdout)))
+                    finally:
+                        db.sql_end()
 
-            
         else:
             # if there are no nodes left to run, let's finish it up!
             self._finish_submission( submid, email )
