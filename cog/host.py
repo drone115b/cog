@@ -72,7 +72,7 @@ def run( execid, config=None ):
                     newdoc.append( {'set': change_dict } )
                     
                     # find the links to whom we need to distribute calculated values:
-                    fn_findlinks = lambda obj : obj.cogtype == 'link' and obj.source.obj.cogid == nodeobj.cogid
+                    fn_findlinks = lambda obj : obj.cogtype == 'link' and obj.model.source.obj.cogid == nodeobj.cogid
                     linkobjs = ccnctx.get_obj_if( fn_findlinks ) # expensive
                     
                     # apply calculated values across these links to the target nodes:
@@ -80,8 +80,8 @@ def run( execid, config=None ):
                     for portname, value in changes :               
                         portobj = objport.get_objport_by_name( ccnctx, nodeobj.cogname, portname )
                         for obj in linkobjs : 
-                            if obj.source.obj.cogid == nodeobj.cogid and obj.source.portobj.cogid == portobj.cogid :
-                                change_dict_targets[ 'node.%s.inputs.%s.value' % (obj.target.obj.cogname, obj.target.portobj.cogname) ] = value
+                            if obj.model.source.obj.cogid == nodeobj.cogid and obj.model.source.portobj.cogid == portobj.cogid :
+                                change_dict_targets[ 'node.%s.inputs.%s.value' % (obj.model.target.obj.cogname, obj.model.target.portobj.cogname) ] = value
                     if change_dict_targets :
                         newdoc.append( { 'set' : change_dict_targets } )                       
                     

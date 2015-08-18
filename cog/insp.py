@@ -91,12 +91,12 @@ def get_schedule( ccn, nodeid_list ):
                 process_list.extend( dep[x] )
             req_nodes.add( x )
     # req_nodes is now the set of nodes (their cogids) that we need to produce the requested output.
-        
+    
     # now apply order constraints to nodes:
     # (Note these are not constraints from the 'order' object, but rather
     # all constraints that pertain to dependencies in the execution order of nodes.)
     order_constr = ccn.get_obj_if( lambda x : x.cogtype == 'order' ) # list of docobjects
-    order = dict( (x,dep[x]) for x in dep if x in req_nodes ) # assert dep[x] should be in req_nodes too!
+    order = dict( (x,set( y for y in dep[x] if y in req_nodes )) for x in dep if x in req_nodes ) # dependent nodes should be in req_nodes too!
     for x in order_constr:
         if x.model.source.cogid in req_nodes and x.model.target.cogid in req_nodes:
             order[ x.model.target.cogid ].add( x.model.source.cogid )
@@ -123,14 +123,16 @@ def get_schedule( ccn, nodeid_list ):
     # remove nodes from the session_order that are actually in the session:
     for x in session_order :
         session_order[x] = session_order[x] - sessions[x] 
+    
     # Now, session_order contains all the nodes that should come before the session.
     for x in sessions:
         for y in sessions[x]: # for the nodes in the session:
             # add the requirements of the session to the requirements of the session's node.
             if y in order :
-                order[ y ] |= session_order[ x ] 
+                order[ y ] |= session_order[x] 
             else:
                 order[ y ] = session_order[x]
+    
     # Now all the nodes in the session have their orders updated to include all the nodes that come before the session.
     for x in req_nodes:
         for y in sessions:

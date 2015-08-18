@@ -103,7 +103,7 @@ class Context ( object ) :
         if confdict is not None:
             self._conf = confdict
         else:
-            self._conf = conf.get_default_conf()
+            self._conf = conf.get_default_config()
 
         
     # -----------------------------------------------------
