@@ -722,19 +722,18 @@ class ServerApp :
     
     def _encode_doc( self, doc ):
         return database.Binary( zlib.compress( json.dumps( doc ) ) )
-    
-    # -------------------------------------------
-    
-    def _encode_log( self, log ):
-        return database.Binary( zlib.compress( log ) )
-        
+
     # -------------------------------------------
         
     def _decode_doc( self, doc ) :
         return json.loads( zlib.decompress(doc) )
     
     # -------------------------------------------
-        
+    
+    def _encode_log( self, log ):
+        return database.Binary( zlib.compress( log ) )
+    
+    # -------------------------------------------
     
     def _decode_log( self, log ) :
         return zlib.decompress( log )
@@ -821,7 +820,7 @@ class ServerApp :
                 self._logger.error( str(execid) ) # @@
                 db.sql_update(sql.EXECUTION_FAIL, (exc, newdoc, uid)) # @@ this seems to be failing to write the exception back to the database
                 if log :
-                    db.sql.insert(sql.INSERT_LOG, (datetime.datetime.now(), uid, self._encode_log(log)))
+                    db.sql_insert(sql.INSERT_LOG, (datetime.datetime.now(), uid, self._encode_log(log)))
                 if submid :
                     db.sql_update(sql.SUBMISSION_FAIL, (submid,))
             except:

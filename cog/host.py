@@ -80,7 +80,7 @@ def run( execid, config=None ):
                     for portname, value in changes :               
                         portobj = objport.get_objport_by_name( ccnctx, nodeobj.cogname, portname )
                         for obj in linkobjs : 
-                            if obj.model.source.obj.cogid == nodeobj.cogid and obj.model.source.portobj.cogid == portobj.cogid :
+                            if obj.model.source.obj.cogid == nodeobj.cogid and obj.model.source.portobj.cogid == portobj.portobj.cogid :
                                 change_dict_targets[ 'node.%s.inputs.%s.value' % (obj.model.target.obj.cogname, obj.model.target.portobj.cogname) ] = value
                     if change_dict_targets :
                         newdoc.append( { 'set' : change_dict_targets } )                       
@@ -91,7 +91,7 @@ def run( execid, config=None ):
                     break # for each node
                 
             log.extend( output.getvalue() ) # @@ SHOULD WRITE BACK LOGS AS THEY ARE AVAILABLE.
-
+            
         servernonce = p.get_nonce() 
         usercred = auth.get_user_credentials( usercred.username, config, servernonce )
         p.apply_results( tuple(usercred), execid, newdoc, '\n'.join(log), exc ) # authenticated

@@ -36,6 +36,7 @@ def get_port_named( obj, portname, inputs=True, outputs=True ) :
         if x.cogname == portname:
             assert docinfo.is_object_type( x, 'port' )
             return x
+    # @@ raise exception for port not found?
     return None
   
 def get_port_id( obj, portid, inputs=True, outputs=True ):
@@ -48,6 +49,7 @@ def get_port_id( obj, portid, inputs=True, outputs=True ):
         if x.cogid == portid:
             assert docinfo.is_object_type( x, 'port' )
             return x
+    # @@ raise exception for port not found?
     return None
   
 def get_objport_by_name( ccn, objname, portname, objtype='node' ):
