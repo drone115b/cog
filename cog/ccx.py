@@ -24,6 +24,7 @@ import objport
 class Context( object ) :
     def __init__( self, nodeobj, ccn ) :
         self._node = nodeobj
+        assert( self._node and self._node.cogtype == "node" )
         self._changes = []
         self._ccn = ccn
     
@@ -36,7 +37,9 @@ class Context( object ) :
         
     def get_input( self, portname ):
         port = objport.get_port_named( self._node, portname, outputs=False)
-        return port.model.value if port else None
+        if not port:
+            raise NameError( "No port named %s in node %s" % (portname, self._node.cogname) )
+        return port.model.value
 
     # -----------------------------------------------------
 
