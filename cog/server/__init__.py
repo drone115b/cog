@@ -477,12 +477,13 @@ class ServerApp :
             while row :
                 
                 submid = str(row[0])
-                # @@ priority = int(row[1])
-                # @@ title = str( row[2] )
-                user = str( row[3] )
-                email = str( row[4] )
-                document = self._decode_doc( row[5] )
-                nodelist = str( row[6] ).split( ',')
+                # @@ born = row[1]
+                # @@ priority = int(row[2])
+                # @@ title = str( row[3] )
+                user = str( row[4] )
+                email = str( row[5] )
+                document = self._decode_doc( row[6] )
+                nodelist = str( row[7] ).split( ',')
                 # @@ state = row[7]
                 
                 userid, groupid = self._auth.get_ids( user )
@@ -521,7 +522,7 @@ class ServerApp :
             try:
                 db.sql_begin_write()
                 self._logger.error( 'fail task_schedule' + traceback.format_exc() ) # @@
-                db.sql_insert(sql.INSERT_EXECUTION, (submid,submid,'','',sql.EXEC_STATE_NUM['fail'],'',exc))
+                db.sql_insert(sql.INSERT_EXECUTION, (submid,submid,datetime.datetime.now(),'','',sql.EXEC_STATE_NUM['fail'],'',exc))
                 db.sql_insert(sql.INSERT_LOG, (datetime.datetime.now(),submid,self._encode_log("Fail to read submission document")))
                 db.sql_update(sql.SUBMISSION_FAIL, (submid,))
             except:
@@ -565,7 +566,7 @@ class ServerApp :
         db = self._db.clone() # necessary for threading with sqlite
         try:    
             db.sql_begin_write()
-            db.sql_insert(sql.INSERT_EXECUTION, (execid,submid,sessionobj.cogname,'',sql.EXEC_STATE_NUM['run'],'',None))
+            db.sql_insert(sql.INSERT_EXECUTION, (execid,submid,sessionobj.cogname,datetime.datetime.now(),'',sql.EXEC_STATE_NUM['run'],'',None))
             db.sql_update(sql.SUBMISSION_RUN, (submid,))
         except:
             self._logger.error( "Error launching execution %s for submission %s" % (execid,submid))
@@ -586,7 +587,7 @@ class ServerApp :
             try:    
                 db.sql_begin_write()
                 self._logger.error( "fail in get session argv" ) # @@
-                db.sql_update(sql.EXECUTION_FAIL, (sessionexc, '', execid))
+                db.sql_update(sql.EXECUTION_FAIL, ('', sessionexc, execid))
                 db.sql_update(sql.SUBMISSION_FAIL, (submid,))
             except:
                 self._logger.error( "Error storing failed execution %s" % execid)
@@ -625,7 +626,7 @@ class ServerApp :
         try:    
             db.sql_begin_write()
             db.sql_update(sql.SUBMISSION_DONE, (submid,))
-            self._logger.info( "Submission complete %s" % submid )
+            self._logger.info( "Submission %s complete" % submid )
         except:
             self._logger.error( "Error marking submission done, %s" % submid)
             self._logger.error(traceback.format_exc())
@@ -674,8 +675,9 @@ class ServerApp :
                     db = self._db.clone() # necessary for threading with sqlite
                     try:    
                         db.sql_begin_write()
-                        self._logger.error( "fail in run_session" ) # @@
-                        db.sql_update(sql.EXECUTION_FAIL, (execexc, '', execid))
+                        self._logger.error( "Exception in run_session (%s)" % submid )
+                        self._logger.error( str( execexc ) )
+                        db.sql_update(sql.EXECUTION_FAIL, ('', execexc, execid))
                         db.sql_update(sql.SUBMISSION_FAIL, (submid,))
                     except:
                         self._logger.error( "Error storing failed execution %s" % (execid))
@@ -688,7 +690,6 @@ class ServerApp :
                     pass
                   
                 if execlog or execstdout :
-                    self._logger.error( execlog+execstdout ) # @@
                     db = self._db.clone() # necessary for threading with sqlite
                     try:    
                         db.sql_begin_write()
@@ -811,18 +812,17 @@ class ServerApp :
         if exc or not submid:
             # fail the execution in the database:
             db = self._db.clone() # necessary for threading with sqlite
+            db.sql_begin_write()
             try:    
-                db.sql_begin_write()
-                self._logger.error( "fail in apply results" ) # @@
-                self._logger.error( exc ) # @@
-                self._logger.error( log ) # @@
-                self._logger.error( str(newdoc) ) # @@
-                self._logger.error( str(execid) ) # @@
-                db.sql_update(sql.EXECUTION_FAIL, (exc, newdoc, uid)) # @@ this seems to be failing to write the exception back to the database
+                self._logger.error( "Submission %s, Execution %s probably will fail to write exception!!" % (submid, execid) )
+                db.sql_update(sql.EXECUTION_FAIL, (newdoc, exc, uid)) # @@ this seems to be failing to write the exception back to the database
+                self._logger.error( "@@@ %s" % str( (newdoc, exc, uid) ) ) # @@@
                 if log :
                     db.sql_insert(sql.INSERT_LOG, (datetime.datetime.now(), uid, self._encode_log(log)))
+                    
                 if submid :
                     db.sql_update(sql.SUBMISSION_FAIL, (submid,))
+                    
             except:
                 self._logger.error( "Error storing failed execution %s" % (uid))
                 self._logger.error(traceback.format_exc())
@@ -843,7 +843,7 @@ class ServerApp :
                 self._logger.error(traceback.format_exc())
             finally:
                 db.sql_end()
-
+        
         return True
     
     # ===========================================
@@ -946,6 +946,7 @@ class ServerApp :
                 sql.INSERT_SUBMISSION, 
                 (
                     submid,
+                    datetime.datetime.now(),
                     int(priority),
                     str(title),
                     usercred.username,
@@ -1054,6 +1055,7 @@ class ServerApp :
         try:
             db.sql_begin_read()
             rows = db.sql_selectall(sql.GET_SUBM_LOGS, (subm,), column_names=True)
+            # @@ rows.extend( db.sql_selectall(sql.GET_SUBM_EXCEPTS, (subm,), column_names=False) )
 
         finally:
             db.sql_end()
@@ -1068,7 +1070,7 @@ class ServerApp :
                     d['body'] = self._decode_log( d['body'] )
                         
         return ret
-    
+
     # ===========================================
     
     @_authorized

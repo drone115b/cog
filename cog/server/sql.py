@@ -40,6 +40,7 @@ DATABASE_SCHEMA_LIST = [
 
 """CREATE TABLE Submission (
  uid            TEXT PRIMARY KEY,
+ born TIMESTAMP NOT NULL,
  priority       INTEGER,
  title          TEXT,
  user           TEXT,
@@ -51,6 +52,7 @@ DATABASE_SCHEMA_LIST = [
 
 """CREATE TABLE Execution (
  uid            TEXT PRIMARY KEY,
+ born TIMESTAMP NOT NULL,
  submuid        TEXT,
  session        TEXT,
  argv           TEXT,
@@ -86,7 +88,7 @@ DATABASE_SCHEMA_LIST.extend( ['INSERT INTO Execstate (name,id) VALUES ("%s",%d);
 #####################################################################
 
 
-INSERT_SUBMISSION = "INSERT INTO Submission (uid,priority,title,user,email,document,nodelist,state) VALUES(?,?,?,?,?,?,?,%d);" % SUBM_STATE_NUM['subm'] 
+INSERT_SUBMISSION = "INSERT INTO Submission (uid,born,priority,title,user,email,document,nodelist,state) VALUES(?,?,?,?,?,?,?,?,%d);" % SUBM_STATE_NUM['subm'] 
 
 SUBMISSION_DONE = "UPDATE Submission SET state=%d WHERE uid=?;" % SUBM_STATE_NUM['done'] # (submid,)
 SUBMISSION_RUN = "UPDATE Submission SET state=%d WHERE uid=?;" % SUBM_STATE_NUM['run'] # (submid,)
@@ -95,14 +97,14 @@ SUBMISSION_FAIL = "UPDATE Submission SET state=%d WHERE uid=?;" % SUBM_STATE_NUM
 
 SELECT_SUBMISSION_RUNDATA = "SELECT document,nodelist FROM Submission WHERE uid=?;" # (submid,)
 
-GET_SUBMISSION_LIST="SELECT uid,priority,title,user,state FROM Submission ORDER BY uid;"
+GET_SUBMISSION_LIST="SELECT uid,born,priority,title,user,state FROM Submission ORDER BY uid;"
 GET_SUBMISSION = "SELECT * FROM Submission WHERE uid=?;" # (uid,)
  
 #########
   
-INSERT_EXECUTION = "INSERT INTO Execution (uid,submuid,session,argv,state,document,exception) VALUES (?,?,?,?,?,?,?);"
+INSERT_EXECUTION = "INSERT INTO Execution (uid,submuid,born,session,argv,state,document,exception) VALUES (?,?,?,?,?,?,?,?);"
   
-EXECUTION_FAIL = "UPDATE Execution SET state=%d, document=?, exception=? WHERE uid=?;" % EXEC_STATE_NUM['fail'] # (exc,doc,uid)
+EXECUTION_FAIL = "UPDATE Execution SET state=%d, document=?, exception=? WHERE uid=?;" % EXEC_STATE_NUM['fail'] # (doc,exc,uid)
 EXECUTION_DONE = "UPDATE Execution SET state=%d, document=? WHERE uid=?;" % EXEC_STATE_NUM['done'] # (document,uid)
 
 EXECUTION_SUBMID = "SELECT submuid FROM Execution WHERE uid=?;" # (execid,)
@@ -117,6 +119,7 @@ INSERT_LOG = "INSERT INTO Log (born,execuid,body) VALUES (?,?,?);" # (date,execi
 
 GET_EXEC_LOGS = "SELECT born,body FROM Log WHERE execuid=? ORDER BY born;" # (execid,)
 GET_SUBM_LOGS = "SELECT Log.born AS born,Log.body as body FROM Log JOIN Execution ON Log.execuid=Execution.uid WHERE Execution.submuid=? ORDER BY Log.born;" # (submid,)
+GET_SUBM_EXCEPTS = "SELECT born, exception AS body FROM Execution WHERE Execution.submuid=? ORDER BY born;" # (submid,)
 
 #########
   

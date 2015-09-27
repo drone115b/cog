@@ -77,7 +77,7 @@ _EXCLUSIVELOCK = 3
 
 # use a double precision floating point representation for TIMESTAMP, not the default string representation
 
-_doomsday = datetime.datetime(2016,1,1)
+_doomsday = datetime.datetime(2017,1,1)
 def _adapt_timestamp(ts):
     td = ts - _doomsday
     # safe for python 2.6, >2.6 should probably use timedelta.total_seconds() built-in.

@@ -70,6 +70,8 @@ def run( execid, config=None ):
                     changes = ccxctx.get_changes()
                     change_dict = dict( ('node.%s.outputs.%s.value' % (nodeobj.cogname, portname), value) for portname, value in changes )
                     newdoc.append( {'set': change_dict } )
+                    for attr in change_dict :
+                        ccnctx.set_attr( attr, change_dict[ attr ] )
                     
                     # find the links to whom we need to distribute calculated values:
                     fn_findlinks = lambda obj : obj.cogtype == 'link' and obj.model.source.obj.cogid == nodeobj.cogid
@@ -83,7 +85,9 @@ def run( execid, config=None ):
                             if obj.model.source.obj.cogid == nodeobj.cogid and obj.model.source.portobj.cogid == portobj.portobj.cogid :
                                 change_dict_targets[ 'node.%s.inputs.%s.value' % (obj.model.target.obj.cogname, obj.model.target.portobj.cogname) ] = value
                     if change_dict_targets :
-                        newdoc.append( { 'set' : change_dict_targets } )                       
+                        newdoc.append( { 'set' : change_dict_targets } )
+                        for attr in change_dict_targets :
+                            ccnctx.set_attr( attr, change_dict_targets[ attr ] )
                     
                 except:
                     # record resulting exception:
