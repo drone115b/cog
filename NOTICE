@@ -1,5 +1,5 @@
 cog copyright 2014-2015 by SpinVFX
-
+              2016- by Mayur Patel and other contributors
 
 wsgi_xmlrpc module originally authored by 
     mikeal.rogers@gmail.com
@@ -10,6 +10,11 @@ wsgi_xmlrpc module originally authored by
     (Original author has not responded to a request to merge back
     changes for >3 years so we assume he's abandoned it.)
 
+qtext.ng module originally designed and implemented in C++ by STANISLAW ADASZEWSKI
+    http://algoholic.eu/qnodeseditor-qt-nodesports-based-data-processing-flow-editor/
+    Branched, ported to python and expanded for the cog project.
+    Adaszewski's implementation was distributed under the BSD License,
+    but the qtext.ng branch is now covered by the cog licensing.
     
 cog requires the PyYAML module by
     Kirill Simonov
