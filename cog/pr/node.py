@@ -26,7 +26,7 @@ from . import port
 import copy
 import collections
 
-NodeModelFields = ('inputs','outputs','session','code','op')
+NodeModelFields = ('inputs','outputs','session','category','widget_help','is_terminal','code','op')
 NodeModel = collections.namedtuple( "NodeModel", NodeModelFields)
 
 
@@ -93,9 +93,12 @@ class NodeObject( docobject.DocObject ):
             inports = [ccn.add_obj('port', self.__fix_namespace(x.cogname,nodens), copy.deepcopy( docio.get_view_body(x.view))) for x in op.model.inputs ]
             outports = [ccn.add_obj('port', self.__fix_namespace(x.cogname,nodens), copy.deepcopy( docio.get_view_body(x.view))) for x in op.model.outputs ]
             session = op.model.session
+            category = op.model.category
+            is_terminal = op.model.is_terminal
+            widget_help = op.model.widget_help
             code = op.model.code
             
-            self.model = NodeModel( inports, outports, session, code, op )
+            self.model = NodeModel( inports, outports, session, category, widget_help, is_terminal, code, op )
             self.view = { '%s %s' % (self.cogtype, self.cogname) : {} } # reset the basic form of the view.
             self.update_view( ccn )
         else:
@@ -104,11 +107,14 @@ class NodeObject( docobject.DocObject ):
             inports = view['inputs'] if 'inputs' in view else []
             outports = view['outputs'] if 'outputs' in view else []
             session = view['session'] if 'session' in view else None
+            category = op.OpObject.clean_category_name( view['category'] ) if 'category' in view else ''
+            widget_help = view['widget_help'] if 'widget_help' in view else ''
+            is_terminal = bool( view['is_terminal'] ) if 'is_terminal' in view else False
             if not docinfo.is_object_type( session, 'session' ):
                 session = ccn.get_obj( 'session', session )
             code = view['code'] if 'code' in view else None
 
-            self.model = NodeModel( inports, outports, session, code, op )
+            self.model = NodeModel( inports, outports, session, category, widget_help, is_terminal, code, op )
 
       
     def update_view( self, ccn ):
@@ -119,6 +125,12 @@ class NodeObject( docobject.DocObject ):
         view['outputs'] = self.model.outputs
         if self.model.session :
             view['session'] = self.model.session
+        if self.model.category :
+            view['category'] = op.OpObject.clean_category_name( self.model.category )
+        if self.model.widget_help :
+            view['widget_help'] = self.model.widget_help
+        if self.model.is_terminal :
+            view['is_terminal'] = '1'
         if self.model.code :
             view['code'] = self.model.code
 
@@ -169,6 +181,15 @@ class NodeObject( docobject.DocObject ):
             if self.model.op.model.session != self.model.session : # compare python addresses
                 set_values['node.%s.session' % self.cogname] = self.model.session.cogname if self.model.session else ''
             
+            if self.model.op.model.category != self.model.category :
+                set_values['node.%s.category' % self.cogname] = self.model.category if self.model.category else ''
+                
+            if self.model.op.model.widget_help != self.model.widget_help :
+                set_values['node.%s.widget_help' % self.cogname] = self.model.widget_help if self.model.widget_help else ''
+                
+            if self.model.op.model.is_terminal != self.model.is_terminal :
+                set_values['node.%s.is_terminal' % self.cogname] = self.model.is_terminal
+            
             if self.model.op.model.code != self.model.code: # compare python addresses
                 set_values['node.%s.code' % self.cogname] = self.model.code if self.model.code else ''
                 
@@ -181,6 +202,10 @@ class NodeObject( docobject.DocObject ):
             set_values['outputs'] = [port.serialize( x ) for x in self.model.outputs]
             if self.model.session:
                 set_values['session'] = self.model.session.cogname
+            if self.model.category:
+                set_values['category'] = self.model.category
+            if self.model.widget_help :
+                set_values['widget_help'] = self.model.widget_help
             if self.model.code:
                 set_values['code'] = self.model.code
                 

@@ -25,7 +25,7 @@ from . import port
 
 import collections
 
-OpModelFields = ('inputs','outputs','session','code')
+OpModelFields = ('inputs','outputs','session','category','widget_help','is_terminal','code')
 OpModel = collections.namedtuple( "OpModel", OpModelFields)
 
 
@@ -34,6 +34,10 @@ class OpObject( docobject.DocObject ):
     
     def __init__(self, ccn, cogname, view):
         super( OpObject, self ).__init__(ccn, cogname, view)
+        
+    #staticmethod
+    def clean_category_name( self, cat ):
+        return '/'.join( x.strip().lower() for x in cat.split('/') if x.strip() )
 
     @staticmethod
     def validate( ccn, doc ):
@@ -84,6 +88,14 @@ class OpObject( docobject.DocObject ):
                 else:
                     msgs.append( "Object code item is not a string, in %s.%s" % (typename, objname))
 
+            if 'category' in view:
+                if not docinfo.is_string( view['category'] ):
+                    msgs.append( "Category not a string, in %s.%s" % (typename, objname) )
+                    
+            if 'widget_help' in view:
+                if not docinfo.is_string( view['widget_help'] ) :
+                    msgs.append( "Widget_help not a string, in %s.%s" % (typename, objname))
+
         return msgs
 
        
@@ -93,11 +105,14 @@ class OpObject( docobject.DocObject ):
         inports = view['inputs'] if 'inputs' in view else []
         outports = view['outputs'] if 'outputs' in view else []
         session = view['session'] if 'session' in view else None
+        category = self.clean_category_name( view['category'] ) if 'category' in view else ''
+        widget_help = view['widget_help'] if 'widget_help' in view else ''
+        is_terminal = bool(view['is_terminal']) if 'is_terminal' in view else False
         if not docinfo.is_object_type( session, 'session' ):
             session = ccn.get_obj( 'session', str(session) )
         code = view['code'] if 'code' in view else None
 
-        self.model = OpModel( inports, outports, session, code )
+        self.model = OpModel( inports, outports, session, category, widget_help, is_terminal, code )
 
 
     def update_view( self, ccn ):
@@ -108,6 +123,9 @@ class OpObject( docobject.DocObject ):
         view['outputs'] = self.model.outputs
         if self.model.session :
             view['session'] = self.model.session
+        view['category'] = self.clean_category_name( self.model.category )
+        view['widget_help'] = self.model.widget_help
+        view['is_terminal'] = self.model.is_terminal
         if self.model.code :
             view['code'] = self.model.code
 
@@ -133,6 +151,12 @@ class OpObject( docobject.DocObject ):
         set_values['outputs'] = [port.serialize( x ) for x in self.model.outputs]
         if self.model.session:
             set_values['session'] = self.model.session.cogname
+        if self.model.category:
+            set_values['category'] = self.model.category
+        if self.model.widget_help :
+            set_values['widget_help'] = self.model.widget_help
+        if self.model.is_terminal :
+            set_values['is_terminal'] = '1'
         if self.model.code:
             set_values['code'] = self.model.code
             

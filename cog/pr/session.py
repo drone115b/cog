@@ -23,11 +23,11 @@ from . import docio
 from . import source
 from . import port
 
-from .. import capture
+#@@ can we remove this? from .. import capture
 
 import collections
 
-SessionModelFields = ('inputs','code')
+SessionModelFields = ('inputs','widget_help','code')
 SessionModel = collections.namedtuple( "SessionModel", SessionModelFields)
 
 
@@ -72,7 +72,11 @@ class SessionObject( docobject.DocObject ):
                 else:
                     if not all( docinfo.is_object_type( y, 'port' ) for y in view['inputs'] ):
                         msgs.append( "Object are not all valid ports in %s.inputs" % objname )
-                
+                        
+            if 'widget_help' in view:
+                if not docinfo.is_string( view['widget_help'] ) :
+                    msgs.append( "Expected string for widget_help in %s.%s" % (typename, objname))
+           
             if 'code' in view:
                 if docinfo.is_string( view['code'] ):
                     exec_obj = source.compile_code( view['code'], '%s %s' % (typename, objname))
@@ -87,8 +91,9 @@ class SessionObject( docobject.DocObject ):
         "updates model from view"
         view = docio.get_view_body( self.view )
         inports = view['inputs'] if 'inputs' in view else []
+        widget_help = view['widget_help'] if 'widget_help' in view else ''
         code = view['code'] 
-        self.model = SessionModel( inports, code )
+        self.model = SessionModel( inports, widget_help, code )
 
 
     def update_view( self, ccn ):
@@ -96,6 +101,7 @@ class SessionObject( docobject.DocObject ):
         view = docio.get_view_body( self.view )
         view.clear()
         view['inputs'] = self.model.inputs
+        view['widget_help'] = self.model.widget_help
         view['code'] = self.model.code
 
       
@@ -115,6 +121,8 @@ class SessionObject( docobject.DocObject ):
         
         set_values = {}
         set_values['inputs'] = [port.serialize( x ) for x in self.model.inputs]
+        if self.model.widget_help :
+            set_values['widget_help'] = self.model.widget_help
         set_values['code'] = self.model.code
             
         ret = [{'%s %s' % (self._cogtype, self.cogname) : set_values}]
