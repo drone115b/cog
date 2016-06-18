@@ -132,10 +132,8 @@ def getClassScene( qt ):
         highlightEnabled = qt.Signal( qt.QtGui.QGraphicsPathItem )
         highlightDisabled = qt.Signal( qt.QtGui.QGraphicsPathItem )
         
-        def __init__( self, parent=None ):
+        def __init__( self, parent=None):
             qt.QtGui.QGraphicsScene.__init__( self, parent )
-            
-            self.setBackgroundBrush(qt.QtGui.QColor.fromRgb(46,46,46))
         
             self.connhandler = ConnectionHandler( self )
             self.connhandler.install( self ) # circular reference
