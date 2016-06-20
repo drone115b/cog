@@ -44,6 +44,9 @@ __class_body = """
             self._model = None
             self.update_model( ccn )
             return
+            
+        def get_model_fields( self ):
+            return self._model._fields
     
         @property
         def view( self ) :

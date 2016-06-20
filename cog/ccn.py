@@ -211,17 +211,21 @@ class Context ( object ) :
         if len_attrlist == 1 :
             return [ self._name_index[x] for x in self._name_index.keys() if x[0] == objtype ]
         elif len_attrlist == 2 :
-            return self._name_index[(attrlist[0],attrlist[1])].view
+            return docio.get_view_body(self._name_index[(attrlist[0],attrlist[1])].view)  
         else:
             return docio.get_attribute( docio.get_view_body(self._name_index[(attrlist[0],attrlist[1])].view), attrlist[2])
 
     # -----------------------------------------------------
     
-    def get_attr_children( self, attrpath ):
+    def get_attr_children( self, attrpath, use_model_fields=False ):
         o = self.get_attr( attrpath )
+
         if docinfo.is_object( o ):
-            o = o.view
-            
+            if use_model_fields :
+                return o.get_model_fields()
+            else:
+                o = docio.get_view_body( o.view )
+
         if docinfo.is_object_list( o ):
             return [ x.cogname for x in o ]
         elif docinfo.is_keyvalue_list( o ):
@@ -229,9 +233,9 @@ class Context ( object ) :
         elif docinfo.is_dict( o ) :
             return o.keys()
         elif docinfo.is_list( o ):
-            return range(len(o))
+            return list(range(len(o)))
         raise KeyError( 'Attribute path does not seem iterable: %s' % attrpath )
-    
+
     # -----------------------------------------------------
       
     def set_attr( self, attrpath, doc ):

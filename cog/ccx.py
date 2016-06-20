@@ -50,7 +50,6 @@ class Context( object ) :
 
     def set_output( self, portname, value ) :
         self._ccn.set_attr( 'node.%s.outputs.%s.value' %( self._node.cogname, portname), value )
-        print( self._ccn.get_attr('node.%s.outputs.%s.value' %( self._node.cogname, portname)) )
         self._changes.append( (portname, value) )
         
     # -----------------------------------------------------

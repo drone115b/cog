@@ -124,7 +124,7 @@ class NodeObject( docobject.DocObject ):
         view['inputs'] = self.model.inputs
         view['outputs'] = self.model.outputs
         if self.model.session :
-            view['session'] = self.model.session
+            view['session'] = self.model.session.cogname
         if self.model.category :
             view['category'] = op.OpObject.clean_category_name( self.model.category )
         if self.model.widget_help :
