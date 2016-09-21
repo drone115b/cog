@@ -73,7 +73,7 @@ class Context ( object ) :
             
             # apply changes first, before inserting into store 
             # because it might delete conflicting objects already in the store
-            self.__apply_to_store( ret ) # store in the ccn            
+            self.__apply_to_store( ret ) # store in the ccn
                     
         elif docinfo.is_list( document ):
             ret = [ self.get_validated_view( y ) for y in document ]
@@ -278,7 +278,7 @@ class Context ( object ) :
         for objid, objtype, oldname in namemap:
             parts = oldname.split( ':', 1 )
             assert len(parts) > 1
-            newname = parts[2]
+            newname = ':'.join(parts[1:])
             self.rename_obj_id( objid, newname )
         return
 
@@ -305,7 +305,7 @@ class Context ( object ) :
         output_order = []
         while order_before :
             count = 0
-            keys = order_before.keys()[:] # make private copy:
+            keys = list( order_before.keys() ) # make private copy:
             for x in keys:
                 if not order_before[x] :
                     output_order.append( x )

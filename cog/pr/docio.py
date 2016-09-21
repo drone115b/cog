@@ -38,7 +38,7 @@ from .. import uid
 def get_view_typename( d ):
     # allow for no-name objects
     assert docinfo.is_keyvalue( d )
-    key_parts = d.keys()[0].split()
+    key_parts = list(d.keys())[0].split()
     len_parts = len(key_parts)
     assert len_parts == 2 or len_parts == 1
     if len_parts == 1 :
@@ -48,7 +48,7 @@ def get_view_typename( d ):
 # =========================================================
 
 def get_view_body( d ):
-    return d.items()[0][1]
+    return list(d.items())[0][1]
 
 # =========================================================
 
