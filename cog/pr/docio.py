@@ -1,6 +1,6 @@
 #####################################################################
 #
-# Copyright 2015 SpinVFX 
+# Copyright 2015 SpinVFX, 2016 Mayur Patel 
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 import copy
 import sys
 import traceback
+import collections
 
 from . import docinfo
 from . import docobject
@@ -221,9 +222,71 @@ def set_attribute( obj, attrpath, document, ccn ):
 
 # -----------------------------------------------------
 
+def get_doc_children( doc, use_model_fields=False ):
+    if docinfo.is_object( doc ):
+        if use_model_fields :
+            return doc.get_model_fields()
+        else:
+            doc = docio.get_view_body( doc.view )
+
+    if docinfo.is_object_list( doc ):
+        return [ x.cogname for x in doc ]
+    elif docinfo.is_keyvalue_list( doc ):
+        return [ x.keys()[0] for x in doc ]
+    elif docinfo.is_dict( doc ) :
+        return list(doc.keys())
+    elif docinfo.is_list( doc ):
+        return list(range(len(doc)))
+        
+    return None
 
 
-    
+# -----------------------------------------------------
+
+DocDiff = collections.namedtuple( "DocDiff", ('equal','unequal','extra','missing'))
+def get_doc_diff( docA, docB ):
+    "returns equal fields, unequal fields, fields in A but not B (extra), and fields in B but not A (missing)"
+    queue = [None]
+    ret = DocDiff( [], [], [], [] )
+    concat_paths = lambda attrpath, keys : ['.'.join([attrpath, k]) if attrpath else k for k in keys]
+    while queue:
+        attrpath = queue.pop()
+        
+        if attrpath :
+            attrA = get_attribute( docA, attrpath )
+            attrB = get_attribute( docB, attrpath )
+        else:
+            attrpath = ''
+            attrA = docA
+            attrB = docB
+            
+        if not docinfo.are_equivalent_types( attrA, attrB ):
+            ret.unequal.append( attrpath )
+        else:
+            keysA = get_doc_children( attrA )
+            keysB = get_doc_children( attrB )
+            
+            if keysA is not None and keysB is not None:
+                keysA = set( keysA )
+                keysB = set( keysB )
+                commonkeys = keysA.intersection( keysB )
+                extrakeys = keysA.difference( keysB )
+                missingkeys = keysB.difference( keysA )
+                
+                ret.extra.extend( concat_paths( attrpath, extrakeys ) )
+                ret.missing.extend( concat_paths( attrpath, missingkeys ) )
+                queue.extend( concat_paths( attrpath, commonkeys ) )
+                
+            elif keysA is None and keysB is None:
+                if attrA == attrB :
+                    ret.equal.append( attrpath )
+                else:
+                    ret.unequal.append( attrpath )
+            else:
+                ret.unequal.append( attrpath )
+            
+    return ret
+
 # =========================================================
 
 

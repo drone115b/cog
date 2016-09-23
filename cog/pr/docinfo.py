@@ -1,6 +1,6 @@
 #####################################################################
 #
-# Copyright 2015 SpinVFX 
+# Copyright 2015 SpinVFX, 2016 Mayur Patel 
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -80,5 +80,10 @@ def is_object_list( obj ) :
 def is_keyvalue_list( obj ):
     return is_list(obj) and all( is_keyvalue(x) for x in obj )
 
+
+# -----------------------------------------------------
+
+def are_equivalent_types( objA, objB ):
+    return isinstance( objA, type(objB) ) or isinstance( objB, type(objA) )
 
 # =========================================================

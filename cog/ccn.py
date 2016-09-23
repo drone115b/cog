@@ -1,6 +1,6 @@
 #####################################################################
 #
-# Copyright 2015 SpinVFX 
+# Copyright 2015 SpinVFX, 2016 Mayur Patel 
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -219,22 +219,7 @@ class Context ( object ) :
     
     def get_attr_children( self, attrpath, use_model_fields=False ):
         o = self.get_attr( attrpath )
-
-        if docinfo.is_object( o ):
-            if use_model_fields :
-                return o.get_model_fields()
-            else:
-                o = docio.get_view_body( o.view )
-
-        if docinfo.is_object_list( o ):
-            return [ x.cogname for x in o ]
-        elif docinfo.is_keyvalue_list( o ):
-            return [ x.keys()[0] for x in o ]
-        elif docinfo.is_dict( o ) :
-            return o.keys()
-        elif docinfo.is_list( o ):
-            return list(range(len(o)))
-        raise KeyError( 'Attribute path does not seem iterable: %s' % attrpath )
+        return docio.get_doc_children( o, use_model_fields )
 
     # -----------------------------------------------------
       
