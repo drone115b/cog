@@ -49,7 +49,9 @@ def get_view_typename( d ):
 # =========================================================
 
 def get_view_body( d ):
-    return list(d.items())[0][1]
+    "return by reference, changes to the returned object will change the view of the document!"
+    k = list(d.keys())
+    return d[k[0]]
 
 # =========================================================
 
@@ -236,7 +238,7 @@ def get_doc_children( doc, use_model_fields=False ):
     elif docinfo.is_dict( doc ) :
         return list(doc.keys())
     elif docinfo.is_list( doc ):
-        return list(range(len(doc)))
+        return [str(i) for i in range(len(doc))]
         
     return None
 
