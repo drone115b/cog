@@ -125,7 +125,45 @@ class Context ( object ) :
     
     def get_obj_types( self ):
         return tuple(sorted( pr.typenames ))
-      
+
+    # -----------------------------------------------------
+    
+    def get_type_order( self ) :
+        "returns the order in which types should be processed to avoid causality problems (e.g. links before nodes"
+        # resolve order of output:
+        order_before = dict( (x, []) for x in pr.typenames )
+        for x in pr.typenames :
+            bef, aft = pr.classes[ x ].serialize_order()
+            if bef:
+                assert all( y in pr.typenames for y in bef )
+                order_before[ x ].extend( bef )
+            if aft:
+                for y in aft:
+                    assert y in pr.typenames
+                    order_before[ y ].append( x )
+        # make unique:            
+        for x in pr.typenames:
+            order_before[x] = set( order_before[x] )
+            
+        output_order = []
+        while order_before :
+            count = 0
+            keys = list( order_before.keys() ) # make private copy:
+            for x in keys:
+                if not order_before[x] :
+                    output_order.append( x )
+                    for y in order_before :
+                        if x in order_before[y]:
+                            order_before[y].remove( x )
+                    del order_before[ x ]
+                    count += 1
+            if not count:
+                raise RuntimeError( "Circular serialization order of document object types: %s" % ','.join(order_before.keys()))
+                 
+        assert len( output_order ) == len( pr.typenames )
+        assert not ( set(output_order) - set( pr.typenames ))
+        return tuple(output_order)
+
     # -----------------------------------------------------
     
     def add_obj( self, objtype, objname, doc ):
@@ -134,7 +172,8 @@ class Context ( object ) :
         doc = {'%s %s' % (objtype, objname) if objname else '' : doc }
         ret = self.get_validated_view( doc )
         # @@ raise exception on name collision?  Esp relevant to ports
-        # that are both redundantly named and have models
+        # that are both redundantly named and have models, also del
+        # @@ need to test to verify that the validated object is being returned.
         return ret 
     
     # -----------------------------------------------------
@@ -271,39 +310,7 @@ class Context ( object ) :
     # -----------------------------------------------------
     def dump_doc( self ) :
         # convert network to a "document" - a primitive serializable data structure
-        
-        # resolve order of output:
-        order_before = dict( (x, []) for x in pr.typenames )
-        for x in pr.typenames :
-            bef, aft = pr.classes[ x ].serialize_order()
-            if bef:
-                assert all( y in pr.typenames for y in bef )
-                order_before[ x ].extend( bef )
-            if aft:
-                for y in aft:
-                    assert y in pr.typenames
-                    order_before[ y ].append( x )
-        # make unique:            
-        for x in pr.typenames:
-            order_before[x] = set( order_before[x] )
-            
-        output_order = []
-        while order_before :
-            count = 0
-            keys = list( order_before.keys() ) # make private copy:
-            for x in keys:
-                if not order_before[x] :
-                    output_order.append( x )
-                    for y in order_before :
-                        if x in order_before[y]:
-                            order_before[y].remove( x )
-                    del order_before[ x ]
-                    count += 1
-            if not count:
-                raise RuntimeError( "Circular serialization order of document object types: %s" % ','.join(order_before.keys()))
-                 
-        assert len( output_order ) == len( pr.typenames )
-        assert not ( set(output_order) - set( pr.typenames ))
+        output_order = self.get_type_order()
         
         # execute conversion of output:
         ret = []

@@ -41,14 +41,12 @@ class AttributeModelNode(object):
         if self.children is None:
             self.children = []
             
-            try:
-                childattrs = sorted(self.ccn.get_attr_children( self.attrpath ))
-                for c in childattrs:
+            childattrs = self.ccn.get_attr_children( self.attrpath )
+            if childattrs :
+                for c in sorted( childattrs ):
                     newpath = '{0}.{1}'.format( self.attrpath, c )
                     newnode = AttributeModelNode( self.ccn, newpath, self ) # adds to self.children[]
-            except KeyError :
-                # leaf attribute paths will throw a KeyError
-                pass
+
         return
 
     def get_child(self, index):
@@ -150,8 +148,7 @@ def getClassAttributeModel( qt ):
                 elif role == qt.QtCore.Qt.ToolTipRole :
                     value = node.help_name()
                 elif role == qt.QtCore.Qt.EditRole :
-                    if 0 == node.child_count() :
-                        value = self.ccn.get_attr( node.attrpath )
+                    value = self.ccn.get_attr( node.attrpath )
                                     
             return value
             
@@ -173,9 +170,6 @@ def getClassAttributeModel( qt ):
             return ret
         
         def flags(self, index):
-            node = index.internalPointer()
-            if 0 != node.child_count() :
-                return qt.QtCore.Qt.ItemIsEnabled
             return qt.QtCore.Qt.ItemIsEnabled | qt.QtCore.Qt.ItemIsSelectable
 
     return AttributeModel

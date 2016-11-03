@@ -30,8 +30,23 @@ class PortObject( docobject.DocObject ):
     _cogtype = 'port'
     
     def __init__(self, ccn, cogname, view):
-        super( PortObject, self ).__init__(ccn, cogname, view)    
-
+        super( PortObject, self ).__init__(ccn, cogname, view)   
+         
+    @staticmethod    
+    def is_mutable() :
+        # ports can be edited explicity.
+        return True
+        
+    @staticmethod
+    def is_operation():
+        # by default, objects are things that can be stored and edited.
+        return False
+        
+    @staticmethod
+    def has_unique_name():
+        # ports do not have unique names, different ops/nodes/sessions could have same-name ports.
+        return False
+        
     @staticmethod
     def validate( ccn, doc ):
         """Should throw an exception if the document is not properly-formed for the type in question
@@ -83,8 +98,8 @@ class PortObject( docobject.DocObject ):
         "Should apply changes to the ccn according to its function."
         pass
 
-    def make_dup( self, ccn, newname ):
-        # Deep copy of this object, entered into ccn with the new name.
+    def copy_to( self, from_ccn, to_ccn ):
+        # Copy this object to a new ccn; should check for dependencies in the new ccn.
         # ports can't be duplicated directly, because they need to live in a container - the container needs to be duplicated.
         return None
 

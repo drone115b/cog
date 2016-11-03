@@ -140,77 +140,61 @@ class NodeObject( docobject.DocObject ):
         pass
 
 
-    def make_dup( self, ccn, newname ):
-        # Deep copy of this object, entered into ccn with the new name.
-        oldname = self.cogname
-        ret = None
-        for doc in self.as_docs():
-            view = docio.get_view_body( doc )
-            if docio.do_recognize_schema( doc, (self._cogtype,) ) :
-                ret = ccn.add_obj( self._cogtype, newname, view )
-            else:
-                assert docio.do_recognize_schema( doc, 'set' )
-                newdocs = {}
-                for k, v in view.items() :
-                   newattr = [x if x != oldname else newname for x in k.split( '.' ) ]
-                   newdocs[ '.'.join(newattr) ] = v
-                ccn.add_obj( 'set', '', {'set':newdocs} )
-        return ret
-
-
     # TODO: This implementation could definitely be better.  
     # If only a value changes on one input, then we really
     # should not store all the attributes of all the inputs!
     def as_docs( self, ccn  ):
-        self.update_view(ccn) # catches renames, etc that might have occurred
-        
-        set_values = {}
-        if self.model.op:
-            ret = [{'node %s' % self.cogname : self.model.op.cogname}]
+        ret = []
+        if ( not self.gencogid ) or ( not ccn.has_obj_id( self.gencogid )) :
+            self.update_view(ccn) # catches renames, etc that might have occurred
             
-            node_parts = sorted(port.serialize( x ) for x in self.model.inputs)
-            op_parts = sorted(port.serialize( x ) for x in self.model.op.model.inputs)
-            if node_parts != op_parts :
-                set_values['node.%s.inputs' % self.cogname ] = node_parts
+            set_values = {}
+            if self.model.op:
+                ret = [{'node %s' % self.cogname : self.model.op.cogname}]
                 
-            node_parts = sorted(port.serialize( x ) for x in self.model.outputs)
-            op_parts = sorted(port.serialize( x ) for x in self.model.op.model.outputs)
-            if node_parts != op_parts :
-                set_values['node.%s.outputs' % self.cogname ] = node_parts
+                node_parts = sorted(port.serialize( x ) for x in self.model.inputs)
+                op_parts = sorted(port.serialize( x ) for x in self.model.op.model.inputs)
+                if node_parts != op_parts :
+                    set_values['node.%s.inputs' % self.cogname ] = node_parts
+                    
+                node_parts = sorted(port.serialize( x ) for x in self.model.outputs)
+                op_parts = sorted(port.serialize( x ) for x in self.model.op.model.outputs)
+                if node_parts != op_parts :
+                    set_values['node.%s.outputs' % self.cogname ] = node_parts
+                    
+                if self.model.op.model.session != self.model.session : # compare python addresses
+                    set_values['node.%s.session' % self.cogname] = self.model.session.cogname if self.model.session else ''
                 
-            if self.model.op.model.session != self.model.session : # compare python addresses
-                set_values['node.%s.session' % self.cogname] = self.model.session.cogname if self.model.session else ''
+                if self.model.op.model.category != self.model.category :
+                    set_values['node.%s.category' % self.cogname] = self.model.category if self.model.category else ''
+                    
+                if self.model.op.model.widget_help != self.model.widget_help :
+                    set_values['node.%s.widget_help' % self.cogname] = self.model.widget_help if self.model.widget_help else ''
+                    
+                if self.model.op.model.is_terminal != self.model.is_terminal :
+                    set_values['node.%s.is_terminal' % self.cogname] = self.model.is_terminal
+                
+                if self.model.op.model.code != self.model.code: # compare python addresses
+                    set_values['node.%s.code' % self.cogname] = self.model.code if self.model.code else ''
+                    
+                if set_values:
+                    ret.append({'set': set_values})
             
-            if self.model.op.model.category != self.model.category :
-                set_values['node.%s.category' % self.cogname] = self.model.category if self.model.category else ''
+            else:
                 
-            if self.model.op.model.widget_help != self.model.widget_help :
-                set_values['node.%s.widget_help' % self.cogname] = self.model.widget_help if self.model.widget_help else ''
-                
-            if self.model.op.model.is_terminal != self.model.is_terminal :
-                set_values['node.%s.is_terminal' % self.cogname] = self.model.is_terminal
-            
-            if self.model.op.model.code != self.model.code: # compare python addresses
-                set_values['node.%s.code' % self.cogname] = self.model.code if self.model.code else ''
-                
-            if set_values:
-                ret.append({'set': set_values})
-        
-        else:
-            
-            set_values['inputs'] = [port.serialize( x ) for x in self.model.inputs]
-            set_values['outputs'] = [port.serialize( x ) for x in self.model.outputs]
-            if self.model.session:
-                set_values['session'] = self.model.session.cogname
-            if self.model.category:
-                set_values['category'] = self.model.category
-            if self.model.widget_help :
-                set_values['widget_help'] = self.model.widget_help
-            if self.model.code:
-                set_values['code'] = self.model.code
-                
-            ret = [{'%s %s' % (self._cogtype, self.cogname): set_values}]
-            
+                set_values['inputs'] = [port.serialize( x ) for x in self.model.inputs]
+                set_values['outputs'] = [port.serialize( x ) for x in self.model.outputs]
+                if self.model.session:
+                    set_values['session'] = self.model.session.cogname
+                if self.model.category:
+                    set_values['category'] = self.model.category
+                if self.model.widget_help :
+                    set_values['widget_help'] = self.model.widget_help
+                if self.model.code:
+                    set_values['code'] = self.model.code
+                    
+                ret = [{'%s %s' % (self._cogtype, self.cogname): set_values}]
+
         return ret
 
 

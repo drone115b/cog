@@ -22,13 +22,30 @@ from . import docinfo
 from . import docio
 
 import collections
-OrderModel = collections.namedtuple( "OrderModel", ['source','target'])
+
+OrderModelFields = ('source','target')
+OrderModel = collections.namedtuple( "OrderModel", OrderModelFields)
 
 class OrderObject( docobject.DocObject ):
     _cogtype = 'order'
     
     def __init__(self, ccn, cogname, view):
         super( OrderObject, self ).__init__(ccn, cogname, view)    
+    
+    @staticmethod    
+    def is_mutable() :
+        # orders cannot be edited explicity, delete and recreate them.
+        return False
+        
+    @staticmethod
+    def is_operation():
+        # by default, objects are things that can be stored and edited.
+        return False
+        
+    @staticmethod
+    def has_unique_name():
+        # orders do not have unique names
+        return False
 
     @staticmethod
     def validate( ccn, doc ):
@@ -73,16 +90,47 @@ class OrderObject( docobject.DocObject ):
     def apply_changes( self, ccn ):
         "Should apply changes to the ccn according to its function."
         pass
-    
-    
-    def make_dup( self, ccn, newname ):
-        # Deep copy of this object, entered into ccn with the new name.
-        return None
 
+
+    @classmethod
+    def rm_from( cls, ccn, doc ) :
+        # Delete an object from a ccn, could leave dangling references!
+        # the order implementation assumes that the 'doc' is a list of node names, in the form [ 'nodename1', 'nodename2' ]:
+        ret = False
+        nodename1, nodename2 = doc[:2] # first two items in the list
+        if nodename1 and nodename2 :
+            ret = True
+            ccn.del_obj_if( lambda x : x.cogtype == 'order' and x.model.source.cogname == nodename1 and x.model.target.cogname == nodename2 )
+        return ret
+
+
+    @classmethod
+    def validate_rm_doc( cls, ccn, obj ):
+        # During parsing, check that the parameters to the deletion are valid:
+        # the order implementation assumes that the 'doc' is a list of node names, in the form [ 'nodename1', 'nodename2' ]:
+        msgs = []
+        if docinfo.is_list( obj ) :
+            parts = obj.split('.')
+            if len( parts ) != 2 or any( not docinfo.is_string( x ) for x in parts ) :
+                    msgs.append( 'Expected rm order value of the form: [ "nodename1", "nodename2" ], not:\n%s' % str(obj) )
+        else:
+           msgs.append( "Expected a list for rm order :\n%s" % str(obj) )
+        if msgs:
+            raise TypeError('\n'.join( msgs ))
+        return
         
+        
+        ret = docinfo.is_list( obj ) and ( len( obj ) == 2 ) and ( docinfo.is_string( x ) for x in obj )
+        return ret
+
+
     def as_docs( self, ccn  ):
-        self.update_view(ccn) # catches renames, etc that might have occurred
-        return [self.view]
+        ret = []
+        if ( not self.gencogid ) or ( not ccn.has_obj_id( self.gencogid )) :
+            self.update_view(ccn) # catches renames, etc that might have occurred
+            ret = [self.view]
+        return ret
+        
 
     @staticmethod
     def serialize_order():

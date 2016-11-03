@@ -18,20 +18,18 @@
 
 from . import icon
 
-import collections
+import cog.pr.docinfo
 
-import yaml
+import collections
+import json
 
 def getClassAttributeEditor( qt ):
 
     from . import attributemodel
-    from . import yamlhighlighter # @@ need python highlighter for "code" attributes
-    # @@ don't necessarily need yaml highligher because all the values will be strings except for code and "Null" 
+    from . import pythonhighlighter
     
     AttributeModel = attributemodel.getClassAttributeModel( qt )
-    YamlHighlighter = yamlhighlighter.getClassYamlHighlighter( qt )
-    
-    AttributeEditContext = collections.namedtuple( "AttributeEditContext", ['ccn','attrpath'] )
+    PythonHighlighter = pythonhighlighter.getClassPythonHighlighter( qt )
     
     class AttributeTreeView( qt.QtGui.QTreeView ):
         selChangeSignal = qt.Signal( qt.QtGui.QItemSelection )
@@ -46,6 +44,7 @@ def getClassAttributeEditor( qt ):
             return
     
     class AttributeEditor( qt.QtGui.QWidget ):
+        setAttrSignal = qt.Signal( str, str ) # attrpath, newvalue_doc
     
         def __init__(self, parent=None ):
             super(AttributeEditor,self).__init__( parent )
@@ -56,32 +55,38 @@ def getClassAttributeEditor( qt ):
             self.treeview_obj = AttributeTreeView( self )
             self.treeview_obj.selChangeSignal.connect( self.cb_currentChanged )
 
+            self.lineedit_attrpath = qt.QtGui.QLineEdit('')
+            self.lineedit_attrpath.textEdited.connect( self.cb_typingAttrpath )
+            self.lineedit_attrpath.editingFinished.connect( self.cb_finishAttrpath )
+
             self.textedit_obj = qt.QtGui.QTextEdit( self ) 
-            self.highlighter = YamlHighlighter( self.textedit_obj.document() ) # @@
-            
-            self.label_attrpath = qt.QtGui.QLabel('')
+            self.highlighter = None
             
             self.button_commit = qt.QtGui.QPushButton( self )
             self.button_commit.setIcon( icon.get_icon( qt, "done" ) )
             self.button_commit.clicked.connect( self.cb_commit )
-            
+
             self.button_clear = qt.QtGui.QPushButton( self )
             self.button_clear.setIcon( icon.get_icon( qt, "close" ) ) 
             self.button_clear.clicked.connect( self.cb_clear )
             
             self.layout = qt.QtGui.QGridLayout()
             self.layout.addWidget( self.treeview_obj,               0, 0, 2, 1 )
-            self.layout.addWidget( self.label_attrpath,             0, 1, 1, 2 )
+            self.layout.addWidget( self.lineedit_attrpath,          0, 1, 1, 2 )
             self.layout.addWidget( self.textedit_obj,               1, 1, 1, 2 )
             self.layout.addWidget( self.button_clear,               2, 1, 1, 1 )
             self.layout.addWidget( self.button_commit,              2, 2, 1, 1 )
             
-            self.layout.setColumnStretch(0, 16)
+            self.layout.setColumnStretch(0, 8)
             self.layout.setColumnStretch(1, 8)
             self.layout.setColumnStretch(2, 8)
             self.layout.setRowStretch(1, 16)
             
             self.setLayout( self.layout )
+            self.setTabOrder( self.treeview_obj, self.lineedit_attrpath )
+            self.setTabOrder( self.lineedit_attrpath, self.textedit_obj )
+            self.setTabOrder( self.textedit_obj, self.button_commit )
+            self.setTabOrder( self.button_commit, self.button_clear )
             
             
         def setCogObject(self, ccn, objtype, objname ):
@@ -98,12 +103,28 @@ def getClassAttributeEditor( qt ):
             self.editcontext = None
             self.treeview_obj.setModel( qt.QtGui.QAbstractItemModel() )
             
+        def cb_typingAttrpath( self, text ) :
+            self.textedit_obj.document().clear()
+            self.editcontext = None
+            
+        def cb_finishAttrpath( self ):
+            ccn = self.model.getCCN()
+            attrpath = self.lineedit_attrpath.text()
+            try:
+                value =  ccn.get_attr( attrpath )
+                doc = qt.QtGui.QTextDocument( self._toEditable(value) )
+                doc = self._setDocDecorators( doc )
+                self.textedit_obj.setDocument( doc )
+            except :
+                pass
+            self.editcontext = attrpath
+            
             
         def cb_currentChanged( self, items ):
         
             currindex = items.indexes()
             self.textedit_obj.document().clear()
-            self.label_attrpath.setText('')
+            self.lineedit_attrpath.setText('')
             self.editcontext = None
             
             if currindex:
@@ -114,36 +135,67 @@ def getClassAttributeEditor( qt ):
                 if self.model :
                     value = self.model.data( currindex, qt.QtCore.Qt.EditRole )
                     attrpath = self.model.attrPath( currindex )
-                    if 0 == self.model.child_count( currindex ) :
-                        value = value if value is not None else 'Null'
-                        enableedits = True
-                        doc = qt.QtGui.QTextDocument( value )
-                        self.highlighter = YamlHighlighter(doc)
-                        self.textedit_obj.setDocument( doc )
-                        self.label_attrpath.setText( attrpath )
-                        self.editcontext = AttributeEditContext( self.model.getCCN(), attrpath )
-                if enableedits:
-                    self.textedit_obj.setEnabled( True )
-                    self.button_clear.setEnabled( True )
-                    self.button_commit.setEnabled( True )
-                else:
-                    self.textedit_obj.setDisabled( True )
-                    self.button_clear.setDisabled( True )
-                    self.button_commit.setDisabled( True )
+                    enableedits = True
+                    doc = qt.QtGui.QTextDocument( self._toEditable( value ) )
+                    doc = self._setDocDecorators( doc )
+                    self.textedit_obj.setDocument( doc )
+                    self.lineedit_attrpath.setText( attrpath )
+                    self.editcontext = attrpath
                     
         def cb_commit( self ):
-            # @@ apply to UNDO queue
-            # @@ apply to script stack
-        
-            if self.editcontext:
-                doc = self.textedit_obj.toPlainText()
-                if doc.strip() in ('Null','null','NULL'):
-                    doc = None
-                self.editcontext.ccn.set_attr( self.editcontext.attrpath, doc )
-                self.treeview_obj.clearSelection()
+            if self.editcontext :
+                doc = self.textedit_obj.toPlainText().encode('ascii') # should be valid json
+                doc = self._fromEditable( doc ) # deserialize the data structure
+                self.setAttrSignal.emit( self.editcontext, doc )  # @@ all the work should be done here!
+                
+                # @@ BEGIN DELETE
+                self.model.getCCN().set_attr( self.editcontext, doc )
+                # @@ probabably should emit a signal here to refresh the master, queue in undo, etc etc.
+                self.setCogObject( self.model.getCCN(), self.obj.cogtype, self.obj.cogname ) # reload, potentially with new attributes
+                # @@ END DELETE
+                
+                self.editcontext = None
+            self.treeview_obj.clearSelection()
 
         
         def cb_clear( self ):
             self.treeview_obj.clearSelection()
-    
+        
+        @staticmethod
+        def _toEditable( doc ):
+            text = json.dumps( doc, default=AttributeEditor._objToEditable, sort_keys=True, indent=2 )
+            if cog.pr.docinfo.is_string( doc ) :
+                CHARS = { '\\n' : '\n', '\\r':'\r', '\\f': '\f', '\\v':'\v' }
+                if any( key in text for key in CHARS.keys() ):
+                    for key in CHARS :
+                        text = text.replace( key, CHARS[key] )
+                    assert text.startswith( '"' ) and text.endswith( '"' )
+                    text = '"""' + text[1:-1] + '"""'
+            return text
+        
+        @staticmethod
+        def _fromEditable( text ):
+            s = text
+            if s.startswith( '"""' ) and s.endswith( '"""' ) :
+                s = '"' + s[3:-3] + '"' 
+                CHARS = { '\n' : '\\n', '\r':'\\r', '\f': '\\f', '\v':'\\v' }
+                for key in CHARS :
+                    s = s.replace( key, CHARS[key] )
+            return json.loads( s )
+        
+        
+        @classmethod
+        def _objToEditable( cls, obj ):
+            if hasattr( obj, '_view' ) :
+                return obj._view
+            raise TypeError
+            
+        def _setDocDecorators( self, doc ):
+            fixedfont = qt.QtGui.QFont("Monospace")
+            doc.setDefaultFont( fixedfont )
+            self.highlighter = PythonHighlighter(doc)
+            return doc
+        
+        
     return AttributeEditor
+

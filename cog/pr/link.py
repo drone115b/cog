@@ -30,7 +30,22 @@ class LinkObject( docobject.DocObject ):
     
     def __init__(self, ccn, cogname, view):
         super( LinkObject, self ).__init__(ccn, cogname, view)    
-
+        
+    @staticmethod    
+    def is_mutable() :
+        # links cannot be edited explicity, delete and recreate them.
+        return False
+        
+    @staticmethod
+    def is_operation():
+        # by default, objects are things that can be stored and edited.
+        return False
+        
+    @staticmethod
+    def has_unique_name():
+        # links do not have unique names
+        return False
+            
     @staticmethod
     def validate( ccn, doc ):
         """Should throw an exception if the document is not properly-formed for the type in question
@@ -70,6 +85,7 @@ class LinkObject( docobject.DocObject ):
         dest1 = objport.get_objport_by_name( ccn, dest1[0], dest1[-1] )
         dest2 = objport.get_objport_by_name( ccn, dest2[0], dest2[-1] )
         self.model = LinkModel( dest1, dest2 )
+
       
     def update_view( self, ccn ):
         "updates view from model"
@@ -84,13 +100,47 @@ class LinkObject( docobject.DocObject ):
         "Should apply changes to the ccn according to its function."
         ccn.del_obj_if( lambda x : x.cogtype == 'link' and x.model.target.obj.cogid == self.model.target.obj.cogid and x.model.target.portobj.cogid == self.model.target.portobj.cogid ) # remove existing link
 
-    def make_dup( self, ccn, newname ):
-        # Deep copy of this object, entered into ccn with the new name.
-        return None
 
+    @classmethod
+    def rm_from( cls, ccn, doc ) :
+        # Delete an object from a ccn, could leave dangling references!
+        # the link implementation assumes that the 'doc' is a target port name, in the form "objtype.objname.portname":
+        ret = False
+        objtype, objname, portname = doc.split( '.', 2 )
+        target = objport.get_objport_by_name( ccn, objname, portname, objtype )
+        if target :
+            ret = True
+            ccn.del_obj_if( lambda x : x.cogtype == 'link' and x.model.target.obj.cogid == target.obj.cogid and x.model.target.portobj.cogid == target.portobj.cogid )
+        return ret
+
+
+    @classmethod
+    def validate_rm_doc( cls, ccn, obj ):
+        # During parsing, check that the parameters to the deletion are valid:
+        # the link implementation assumes that the 'doc' is a target port name, in the form "objtype.objname.portname":
+        msgs = []
+        if docinfo.is_string( obj ) :
+            parts = obj.split('.')
+            if not parts[0] in ( 'node', 'session' ) :
+                msgs.append( "Expected node or session in link rm: %s" % obj )
+            else:
+                if len( parts ) != 3 :
+                    msgs.append( "Expected rm link value of the form: objtype.objname.portname" )
+            # doesn't need to resolve to a specific port - useful for keeping it robust 
+            # with nested references that might be changing.
+        else:
+           msgs.append( "Expected a string for rm link :\n%s" % str(obj) )
+        if msgs:
+            raise TypeError('\n'.join( msgs ))
+        return
+        
+        
     def as_docs( self, ccn  ):
-        self.update_view(ccn) # catches renames, etc that might have occurred
-        return [self.view]
+        ret = []
+        if ( not self.gencogid ) or ( not ccn.has_obj_id( self.gencogid )) :
+            self.update_view(ccn) # catches renames, etc that might have occurred
+            ret = [self.view]
+        return ret
 
     @staticmethod
     def serialize_order():

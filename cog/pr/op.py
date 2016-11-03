@@ -133,34 +133,28 @@ class OpObject( docobject.DocObject ):
     def apply_changes( self, ccn ):
         "Should apply changes to the ccn according to its function."
         pass
-    
-    
-    def make_dup( self, ccn, newname ):
-        # Deep copy of this object, entered into ccn with the new name.
-        oldname = self.cogname
-        doc = self.as_docs(ccn)[0]
-        view = docio.get_view_body( doc )
-        return ccn.add_obj( self._cogtype, newname, view )
         
     
     def as_docs( self, ccn  ):
-        self.update_view(ccn) # catches renames, etc that might have occurred
-        
-        set_values = {}
-        set_values['inputs'] = [port.serialize( x ) for x in self.model.inputs]
-        set_values['outputs'] = [port.serialize( x ) for x in self.model.outputs]
-        if self.model.session:
-            set_values['session'] = self.model.session.cogname
-        if self.model.category:
-            set_values['category'] = self.model.category
-        if self.model.widget_help :
-            set_values['widget_help'] = self.model.widget_help
-        if self.model.is_terminal :
-            set_values['is_terminal'] = '1'
-        if self.model.code:
-            set_values['code'] = self.model.code
+        ret = []
+        if ( not self.gencogid ) or ( not ccn.has_obj_id( self.gencogid )) :
+            self.update_view(ccn) # catches renames, etc that might have occurred
             
-        ret = [{'%s %s' % (self._cogtype, self.cogname) : set_values}]
+            set_values = {}
+            set_values['inputs'] = [port.serialize( x ) for x in self.model.inputs]
+            set_values['outputs'] = [port.serialize( x ) for x in self.model.outputs]
+            if self.model.session:
+                set_values['session'] = self.model.session.cogname
+            if self.model.category:
+                set_values['category'] = self.model.category
+            if self.model.widget_help :
+                set_values['widget_help'] = self.model.widget_help
+            if self.model.is_terminal :
+                set_values['is_terminal'] = '1'
+            if self.model.code:
+                set_values['code'] = self.model.code
+                
+            ret = [{'%s %s' % (self._cogtype, self.cogname) : set_values}]
             
         return ret
 

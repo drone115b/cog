@@ -1,6 +1,8 @@
+#!/usr/bin/env python2.7
+
 #####################################################################
 #
-# Copyright 2015 SpinVFX 
+# Copyright 2016 Mayur Patel
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,17 +18,21 @@
 # 
 #####################################################################
 
-from . import docobject
-from . import rm
-from . import link
-from . import node
-from . import op
-from . import order
-from . import port
-from . import refyaml
-from . import session
-from . import set
-from . import ui
+import unittest
+import os
 
-classes = docobject.get_classes()
-typenames = tuple( classes.keys() )
+# ==========================================
+
+import tests
+
+# ==========================================
+
+
+# reference: http://stackoverflow.com/questions/1732438/how-to-run-all-python-unit-tests-in-a-directory
+#####################################################################
+if __name__ == '__main__':
+    loader = unittest.TestLoader()
+    testlist = loader.discover(os.path.dirname(tests.__file__))
+    testRunner = unittest.runner.TextTestRunner()
+    testRunner.run(testlist)
+
