@@ -133,9 +133,8 @@ __class_body = """
             
         def copy_to( self, from_ccn, to_ccn ):
             # Copy this object to a new ccn; should check for dependencies in the new ccn.
-            import docio
             self.update_view(from_ccn) # catches renames, etc that might have occurred
-            view = docio.get_view_body( self.view )
+            view = list(self.view.items())[0][1] # should call docio.get_view_body( self.view ), but can't resolve scopes properly in both python2 and python3
             obj = to_ccn.add_obj( self.cogtype, self.cogname, view )
             return obj
             
