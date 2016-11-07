@@ -36,13 +36,9 @@ import cog.ccn
 
 class BasicWRX(unittest.TestCase):
   # ----------------------------------------
-
+  
   def setUp(self):
     self.yamldoc = """
-
-- ui qt4 :
-    node.node1 : [ 21, 45 ]
-    node.node2 : [ 56, 78 ]
 
 - session std1 :
     inputs :
@@ -91,6 +87,10 @@ class BasicWRX(unittest.TestCase):
 - node node2 : op2
 
 - link : ['node1.op1_output', 'node2.op2_filename']
+
+- ui qt4 :
+    node.node1 : [ 21, 45 ]
+    node.node2 : [ 56, 78 ]
 
 """
 
@@ -142,7 +142,19 @@ class BasicWRX(unittest.TestCase):
     
   def test_io1( self ):
     doc = self.ccn.dump_doc()
-    self.assertEqual( self.doc, doc )
+    # it is possible in python 3.x that the order of the
+    # docobjects in the document changes.  Not sure why,
+    # but this inconsistency occurs between invokations 
+    # of python, which is really scary.  In other words, you can
+    # run exactly the same code twice in a row and get different results
+    # in each run.  Confirmed in python 3.4.3 and 3.5.2 on
+    # Ubuntu 14.04 LTS. A fully unambiguous
+    # dependency network, which binds the docobjects to a
+    # particular output order is one work-around.  (As of now, is implemented)
+    # but it feels like the unit test should not need to depend on this:
+    for x in self.doc :
+        self.assertTrue( x in doc )
+    self.assertEqual( len(doc), len(self.doc) )
     
   def test_setattr1( self ) :
     testword = 'banana'

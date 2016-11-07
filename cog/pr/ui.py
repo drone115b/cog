@@ -92,4 +92,4 @@ class UiObject( docobject.DocObject ):
         
     @staticmethod
     def serialize_order():
-        return (None,None)
+        return (('node','link'),None)

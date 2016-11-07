@@ -204,5 +204,5 @@ class NodeObject( docobject.DocObject ):
 
     @staticmethod
     def serialize_order():
-        return (('op','port'),None)
+        return (('op','port','session'),None)
 
