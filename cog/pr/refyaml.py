@@ -105,34 +105,35 @@ class RefyamlObject( docobject.DocObject ):
       
     def update_model( self, ccn ):
         view = docio.get_view_body( self.view )
-        self.model = RefyamlObjectModel( view )
+        self.model = RefyamlModel( view )
       
     def update_view( self, ccn ):
-        self.view = self.model.name
+        self.view = { "%s %s" % (self.cogtype, self.cogname) : self.model.name }
         
     def apply_changes( self, ccn ):
         "Should apply changes to the ccn according to its function."
-        refccn = self.get_ref_ccn( self, ccn )
+        refccn = self.get_ref_ccn( ccn )
         self._index = {}
         
         namespace = self.cogname
         if namespace:
             refccn.push_namespace( namespace )
-            
-        output_order = refccn.get_obj_type_order()
+        
+        output_order = refccn.get_type_order()
         # duplicate each object in order by type:
         for x in output_order :
             # get objects of the current type:
-            typematch = lambda x : x.cogtype == x
+            typematch = lambda o : o.cogtype == x
             objs = refccn.get_obj_if( typematch )
             # process objects roughly in the chronological order that they were created:
             keys = sorted( obj.cogid for obj in objs )
             for y in keys:
                 obj = refccn.get_obj_id( y )
                 if not obj.gencogid : # objects that are going to be regenerated do not need to be copied
-                    newobj = obj.copy_to( ccn, refccn )
-                    newobj.gencogid = self.cogid # mark new obj as a generated object, made by this reference object
-                    self._index[ y ] = newobj.cogid
+                    newobj = obj.copy_to( refccn, ccn )
+                    if newobj : # some docobjects, like ports, do not copy themselves
+                        newobj.gencogid = self.cogid # mark new obj as a generated object, made by this reference object
+                        self._index[ y ] = newobj.cogid
 
         return
         
@@ -156,7 +157,7 @@ class RefyamlObject( docobject.DocObject ):
     def as_docs( self, ccn ):
         self.update_view(ccn) # catches renames, etc that might have occurred
         view = docio.get_view_body( self.view )
-        ret = [{'%s %s' % (self._cogtype, self.cogname): view}]
+        ret = [{'%s %s' % (self._cogtype, self.cogname): view }]
         return ret
 
     @staticmethod

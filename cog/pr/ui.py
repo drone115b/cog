@@ -65,7 +65,6 @@ class UiObject( docobject.DocObject ):
         self.model = new_dict
 
     def update_view( self, ccn ):
-        view = docio.get_view_body( self.view )
         new_dict = {}
         for k in self.model:
             new_key = k
@@ -73,8 +72,7 @@ class UiObject( docobject.DocObject ):
                 assert( docinfo.is_list( k ) and len(k)==2 )
                 new_key = '%s.%s' % (k[1].cogtype, k[1].cogname)
             new_dict[ new_key ] = self.model[k]
-        view.clear()
-        view.update( new_dict )
+        self.view = { "%s %s" % (self.cogtype, self.cogname) : new_dict }
       
     def apply_changes( self, ccn ):
         "Should apply changes to the ccn according to its function."
@@ -83,16 +81,13 @@ class UiObject( docobject.DocObject ):
     def copy_to( self, from_ccn, to_ccn ):
         # Copy this object to a new ccn; should check for dependencies in the new ccn.
         # Doesn't make sense to duplicate the object (at least in the context of keeping them in a ccn)
-        # @@ verify
         return None
 
     def as_docs( self, ccn ):
-        # @@ Are we sure we want to write out ui objects, and not regenerate them?
-        # @@ This does not look correct, looks like it returns the view and not a valid object instance
         ret = []
         if ( not self.gencogid ) or ( not ccn.has_obj_id( self.gencogid )) :
             self.update_view(ccn) # catches renames, etc that might have occurred
-            ret = [dict(self.view.items())]
+            ret = [ self.view ]
         return ret
         
     @staticmethod

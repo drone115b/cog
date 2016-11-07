@@ -90,10 +90,10 @@ class LinkObject( docobject.DocObject ):
     def update_view( self, ccn ):
         "updates view from model"
         if self.model:
-            view = docio.get_view_body( self.view )
             src = self.model.source
             tgt = self.model.target
-            view[0:] = ["%s.%s" % (src.obj.cogname, src.portobj.cogname), "%s.%s" % (tgt.obj.cogname, tgt.portobj.cogname)]
+            view = ["%s.%s" % (src.obj.cogname, src.portobj.cogname), "%s.%s" % (tgt.obj.cogname, tgt.portobj.cogname)]
+            self.view = { "link" : view }
         
       
     def apply_changes( self, ccn ):

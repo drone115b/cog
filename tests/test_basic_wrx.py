@@ -23,7 +23,10 @@ import os
 
 # ==========================================
 
-import ruamel.yaml as yaml
+try:
+    import ruamel.yaml as yaml
+except:
+    import yaml
 
 # ==========================================
 
@@ -36,6 +39,10 @@ class BasicWRX(unittest.TestCase):
 
   def setUp(self):
     self.yamldoc = """
+
+- ui qt4 :
+    node.node1 : [ 21, 45 ]
+    node.node2 : [ 56, 78 ]
 
 - session std1 :
     inputs :
@@ -120,16 +127,16 @@ class BasicWRX(unittest.TestCase):
   def test_pushpop_namespace( self ) :
     self.ccn.push_namespace( 'NMSP1' )
     self.assertEqual( self.ccn.get_attr( 'node.NMSP1:node2.code' ), """print( "op2 code: %s" % ccx.get_input('op2_filename') )\nccx.set_output( 'op2_output', ccx.get_input('op2_filename') )\n""" )
-    self.assertEqual( self.ccn.get_attr( 'node.NMSP1:node1.session' ), 'std1' )
-    self.assertEqual( self.ccn.get_attr( 'op.NMSP1:op1.outputs.NMSP1:op1_output.widget_hint' ), 'string' )
+    self.assertEqual( self.ccn.get_attr( 'node.NMSP1:node1.session' ), 'NMSP1:std1' )
+    self.assertEqual( self.ccn.get_attr( 'op.NMSP1:op1.outputs.op1_output.widget_hint' ), 'string' )
     self.ccn.push_namespace( 'NMSP2' )
     self.assertEqual( self.ccn.get_attr( 'node.NMSP2:NMSP1:node2.code' ), """print( "op2 code: %s" % ccx.get_input('op2_filename') )\nccx.set_output( 'op2_output', ccx.get_input('op2_filename') )\n""" )
-    self.assertEqual( self.ccn.get_attr( 'node.NMSP2:NMSP1:node1.session' ), 'std1' )
-    self.assertEqual( self.ccn.get_attr( 'op.NMSP2:NMSP1:op1.outputs.NMSP2:NMSP1:op1_output.widget_hint' ), 'string' )
+    self.assertEqual( self.ccn.get_attr( 'node.NMSP2:NMSP1:node1.session' ), 'NMSP2:NMSP1:std1' )
+    self.assertEqual( self.ccn.get_attr( 'op.NMSP2:NMSP1:op1.outputs.op1_output.widget_hint' ), 'string' )
     self.ccn.pop_namespace()
     self.assertEqual( self.ccn.get_attr( 'node.NMSP1:node2.code' ), """print( "op2 code: %s" % ccx.get_input('op2_filename') )\nccx.set_output( 'op2_output', ccx.get_input('op2_filename') )\n""" )
-    self.assertEqual( self.ccn.get_attr( 'node.NMSP1:node1.session' ), 'std1' )
-    self.assertEqual( self.ccn.get_attr( 'op.NMSP1:op1.outputs.NMSP1:op1_output.widget_hint' ), 'string' )
+    self.assertEqual( self.ccn.get_attr( 'node.NMSP1:node1.session' ), 'NMSP1:std1' )
+    self.assertEqual( self.ccn.get_attr( 'op.NMSP1:op1.outputs.op1_output.widget_hint' ), 'string' )
     self.ccn.pop_namespace()
     self.test_getattr1()
     

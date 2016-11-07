@@ -1,6 +1,6 @@
 #####################################################################
 #
-# Copyright 2015 SpinVFX 
+# Copyright 2015 SpinVFX, 2016 Mayur Patel 
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -133,6 +133,7 @@ __class_body = """
             
         def copy_to( self, from_ccn, to_ccn ):
             # Copy this object to a new ccn; should check for dependencies in the new ccn.
+            import docio
             self.update_view(from_ccn) # catches renames, etc that might have occurred
             view = docio.get_view_body( self.view )
             obj = to_ccn.add_obj( self.cogtype, self.cogname, view )

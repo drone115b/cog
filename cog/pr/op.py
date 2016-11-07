@@ -104,12 +104,12 @@ class OpObject( docobject.DocObject ):
         view = docio.get_view_body( self.view )
         inports = view['inputs'] if 'inputs' in view else []
         outports = view['outputs'] if 'outputs' in view else []
-        session = view['session'] if 'session' in view else None
+        session = view['session']
+        if not docinfo.is_object_type( session, 'session' ):
+            session = ccn.get_obj( 'session', str(session) )
         category = self.clean_category_name( view['category'] ) if 'category' in view else ''
         widget_help = view['widget_help'] if 'widget_help' in view else ''
         is_terminal = bool(view['is_terminal']) if 'is_terminal' in view else False
-        if not docinfo.is_object_type( session, 'session' ):
-            session = ccn.get_obj( 'session', str(session) )
         code = view['code'] if 'code' in view else None
 
         self.model = OpModel( inports, outports, session, category, widget_help, is_terminal, code )
@@ -117,18 +117,17 @@ class OpObject( docobject.DocObject ):
 
     def update_view( self, ccn ):
         "updates view from model"
-        view = docio.get_view_body( self.view )
         view = {}
         view['inputs'] = self.model.inputs
         view['outputs'] = self.model.outputs
-        if self.model.session :
-            view['session'] = self.model.session
+        if docinfo.is_object_type( self.model.session, 'session' ) :
+            view['session'] = self.model.session.cogname
         view['category'] = self.clean_category_name( self.model.category )
         view['widget_help'] = self.model.widget_help
         view['is_terminal'] = self.model.is_terminal
         if self.model.code :
             view['code'] = self.model.code
-
+        self.view = { "%s %s" % (self.cogtype, self.cogname) : view }
       
     def apply_changes( self, ccn ):
         "Should apply changes to the ccn according to its function."

@@ -1,0 +1,7 @@
+- refyaml std : test_basic_ref_001.yaml
+
+- node node1 : std:op1
+- node node2 : std:op2
+
+- link : ['node1.op1_output', 'node2.op2_filename']
+

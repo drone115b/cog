@@ -1,6 +1,6 @@
 #####################################################################
 #
-# Copyright 2015 SpinVFX 
+# Copyright 2015 SpinVFX, 2016 Mayur Patel
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ class NodeObject( docobject.DocObject ):
                 try:
                     obj = ccn.get_obj( 'op', view )
                 except:
-                    msgs.append( "Unable to reference node target for %s: (op) %s" % (objname, str(view)))
+                    msgs.append( "Unable to find node target for %s: (op) %s" % (objname, str(view)))
                     
                                  
             # while I fear it will lead to sloppy programming, the node has to be able to accept
@@ -102,11 +102,14 @@ class NodeObject( docobject.DocObject ):
             self.view = { '%s %s' % (self.cogtype, self.cogname) : {} } # reset the basic form of the view.
             self.update_view( ccn )
         else:
-            op = self.model.op
+            op = ccn.get_obj( 'op', view['op'] )
             
             inports = view['inputs'] if 'inputs' in view else []
             outports = view['outputs'] if 'outputs' in view else []
-            session = view['session'] if 'session' in view else None
+            session = view['session']
+            if not docinfo.is_object_type( session, 'session' ):
+                session = ccn.get_obj( 'session', str(session) )
+
             category = op.OpObject.clean_category_name( view['category'] ) if 'category' in view else ''
             widget_help = view['widget_help'] if 'widget_help' in view else ''
             is_terminal = bool( view['is_terminal'] ) if 'is_terminal' in view else False
@@ -119,11 +122,10 @@ class NodeObject( docobject.DocObject ):
       
     def update_view( self, ccn ):
         "updates view from model"
-        view = docio.get_view_body( self.view )
-        view.clear()
+        view = {}
         view['inputs'] = self.model.inputs
         view['outputs'] = self.model.outputs
-        if self.model.session :
+        if docinfo.is_object_type( self.model.session, 'session' ) :
             view['session'] = self.model.session.cogname
         if self.model.category :
             view['category'] = op.OpObject.clean_category_name( self.model.category )
@@ -133,6 +135,8 @@ class NodeObject( docobject.DocObject ):
             view['is_terminal'] = '1'
         if self.model.code :
             view['code'] = self.model.code
+        view['op'] = self.model.op.cogname
+        self.view = { "%s %s" % (self.cogtype, self.cogname) : view }
 
       
     def apply_changes( self, ccn ):

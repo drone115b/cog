@@ -85,6 +85,7 @@ class OrderObject( docobject.DocObject ):
             src = self.model.source
             tgt = self.model.target
             view = [src.cogname, tgt.cogname]
+            self.view = { 'order' : view }
         
       
     def apply_changes( self, ccn ):

@@ -206,6 +206,7 @@ class Context ( object ) :
     # -----------------------------------------------------
     
     def rename_obj_id( self, objid, newname ):
+        "this renames the given object, but objects that reference it by name may need their views refreshed."
         obj = self._store[ objid ]
         oldname = obj.cogname
         objtype = obj.cogtype
@@ -285,9 +286,16 @@ class Context ( object ) :
     def push_namespace( self, ns ):
         # have to build all the renaming first, because renaming deletes elements
         # from the dictionary, invalidating the iteration over that data structure:
-        namemap = [(x, self._store[x].cogtype, self._store[x].cogname, '%s:%s' % (ns, self._store[x].cogname)) for x in self._store]
-        for objid, objtype, oldname, newname in namemap:
-            self.rename_obj_id( objid, newname )
+        output_order = self.get_type_order()
+        # process in dependency order of docobject types:
+        for objtype in output_order :
+            # get objects of the current type:
+            typematch = lambda o : o.cogtype == objtype
+            objs = self.get_obj_if( typematch )
+            for obj in objs:
+                newname = '%s:%s' % (ns, obj.cogname)
+                self.rename_obj_id( obj.cogid, newname )
+                obj.update_view( self ) # to refresh references to dependencies/objects already renamed.
         return
         
     # -----------------------------------------------------
@@ -295,18 +303,20 @@ class Context ( object ) :
         # remember:
         # if the network has been merge, it's possible that different nodes have completely
         # different namespaces, with no leading characters in common.
-        
-        # have to build all the renaming first, because renaming deletes elements
-        # from the dictionary, invalidating the iteration over that data structure:
-        namemap = [(x, self._store[x].cogtype, self._store[x].cogname) for x in self._store]
-        for objid, objtype, oldname in namemap:
-            parts = oldname.split( ':', 1 )
-            assert len(parts) > 1
-            newname = ':'.join(parts[1:])
-            self.rename_obj_id( objid, newname )
+        output_order = self.get_type_order()
+        # process in dependency order of docobject types:
+        for objtype in output_order :
+            # get objects of the current type:
+            typematch = lambda o : o.cogtype == objtype
+            objs = self.get_obj_if( typematch )
+            for obj in objs:
+                parts = obj.cogname.split( ':', 1 )
+                if len(parts) != 1 : # some docobjects, like ports, rename themselves to eliminate the namespace            
+                    newname = ':'.join(parts[1:])
+                    self.rename_obj_id( obj.cogid, newname )
+                obj.update_view( self ) # to refresh references to dependencies/objects already renamed.
         return
 
-    
     # -----------------------------------------------------
     def dump_doc( self ) :
         # convert network to a "document" - a primitive serializable data structure

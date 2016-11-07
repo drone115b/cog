@@ -30,7 +30,10 @@ class PortObject( docobject.DocObject ):
     _cogtype = 'port'
     
     def __init__(self, ccn, cogname, view):
-        super( PortObject, self ).__init__(ccn, cogname, view)   
+        super( PortObject, self ).__init__(ccn, cogname, view)
+        
+    def _strip_namespaces( self ) :
+        self._cogname = self._cogname.split( ':' )[-1]   
          
     @staticmethod    
     def is_mutable() :
@@ -82,6 +85,7 @@ class PortObject( docobject.DocObject ):
         widget_hint = view['widget_hint'] if 'widget_hint' in view else ''
         widget_help = view['widget_help'] if 'widget_help' in view else ''
         value = view['value'] if 'value' in view else None
+        self._strip_namespaces()
         self.model = PortModel( value, widget_hint, widget_help )
       
     def update_view( self, ccn ):
@@ -93,7 +97,9 @@ class PortObject( docobject.DocObject ):
             view['widget_help'] = self.model.widget_help
         if self.model.value is not None:
             view['value'] = self.model.value
-      
+        self._strip_namespaces()
+        self.view = {"%s %s" % (self.cogtype, self.cogname) : view }
+              
     def apply_changes( self, ccn ):
         "Should apply changes to the ccn according to its function."
         pass

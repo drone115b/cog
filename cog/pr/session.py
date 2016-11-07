@@ -96,12 +96,11 @@ class SessionObject( docobject.DocObject ):
 
     def update_view( self, ccn ):
         "updates view from model"
-        view = docio.get_view_body( self.view )
-        view.clear()
+        view = {}
         view['inputs'] = self.model.inputs
         view['widget_help'] = self.model.widget_help
         view['code'] = self.model.code
-
+        self.view = { "%s %s" % (self.cogtype, self.cogname) : view }
       
     def apply_changes( self, ccn ):
         "Should apply changes to the ccn according to its function."
