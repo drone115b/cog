@@ -1,6 +1,6 @@
 #####################################################################
 #
-# Copyright 2015 SpinVFX 
+# Copyright 2015 SpinVFX, 2016 Mayur Patel 
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
 from . import docobject
 from . import docinfo
 from . import docio
-
 
 import collections
 LinkModelFields = ('source','target')
@@ -105,9 +104,10 @@ class LinkObject( docobject.DocObject ):
     def rm_from( cls, ccn, doc ) :
         # Delete an object from a ccn, could leave dangling references!
         # the link implementation assumes that the 'doc' is a target port name, in the form "objtype.objname.portname":
+        from .. import objport
         ret = False
-        objtype, objname, portname = doc.split( '.', 2 )
-        target = objport.get_objport_by_name( ccn, objname, portname, objtype )
+        objname, portname = doc.split( '.', 1 )
+        target = objport.get_objport_by_name( ccn, objname, portname )
         if target :
             ret = True
             ccn.del_obj_if( lambda x : x.cogtype == 'link' and x.model.target.obj.cogid == target.obj.cogid and x.model.target.portobj.cogid == target.portobj.cogid )
@@ -121,11 +121,8 @@ class LinkObject( docobject.DocObject ):
         msgs = []
         if docinfo.is_string( obj ) :
             parts = obj.split('.')
-            if not parts[0] in ( 'node', 'session' ) :
-                msgs.append( "Expected node or session in link rm: %s" % obj )
-            else:
-                if len( parts ) != 3 :
-                    msgs.append( "Expected rm link value of the form: objtype.objname.portname" )
+            if len( parts ) != 2 :
+                msgs.append( "Expected rm link value of the form: nodename.portname" )
             # doesn't need to resolve to a specific port - useful for keeping it robust 
             # with nested references that might be changing.
         else:

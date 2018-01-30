@@ -111,9 +111,8 @@ class OrderObject( docobject.DocObject ):
         # the order implementation assumes that the 'doc' is a list of node names, in the form [ 'nodename1', 'nodename2' ]:
         msgs = []
         if docinfo.is_list( obj ) :
-            parts = obj.split('.')
-            if len( parts ) != 2 or any( not docinfo.is_string( x ) for x in parts ) :
-                    msgs.append( 'Expected rm order value of the form: [ "nodename1", "nodename2" ], not:\n%s' % str(obj) )
+            if len( obj ) != 2 or any( not docinfo.is_string( x ) for x in obj ) :
+                msgs.append( 'Expected rm order value of the form: [ "nodename1", "nodename2" ], not:\n%s' % str(obj) )
         else:
            msgs.append( "Expected a list for rm order :\n%s" % str(obj) )
         if msgs:
