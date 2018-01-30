@@ -1,0 +1,51 @@
+
+- session std1 :
+    inputs :
+        - port std_version :
+            widget_hint : string
+            widget_help : Select a version of python to use
+            value : python27
+    code : |
+        ccs.set_argv( ['/home/mayur/cog_session_%s.py' % ccs.get_input('std_version'), ccs.get_execid()] )
+
+- session std2 :
+    inputs :
+        - port std2_version :
+            value : python27
+    code : |
+        ccs.set_argv( ['/home/mayur/cog_session_%s.py' % ccs.get_input('std2_version'), ccs.get_execid()] )
+
+
+- op op1 :
+    inputs :
+        - port target_path :
+            widget_hint : string
+            value : '/tmp/cog/cog.db'
+            
+        - port thing :
+            widget_hint : string
+            value : 'bologna'
+    outputs:
+        - port output:
+            widget_hint : string
+    session : std1
+    code : |
+        import os
+        ccx.set_output( 'output', os.path.dirname( ccx.get_input( 'target_path' )))
+        
+- op op2 :
+    inputs :
+        - port target_path :
+            widget_hint : string
+            
+        - port thing :
+            widget_hint : string
+    outputs:
+        - port output:
+            widget_hint : string
+            widget_help : I do not know what this thing does
+    session : std2
+    code : |
+        print( "op2 code: %s" % ccx.get_input('target_path') )
+        ccx.set_output( 'output', ccx.get_input('target_path') )
+

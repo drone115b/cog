@@ -1,0 +1,33 @@
+- refyaml std : ./test_basic_server_001.cog
+
+- node run1 : std:op1
+- node run2 : std:op2
+- node run22 : std:op2
+- node run11 : std:op1
+    
+- set :
+    node.run1.inputs.target_path.value : "set value 1"
+    node.run2.inputs.thing.value : "set value 2"
+    
+- ui qt :
+      node.run2 :
+          pos : [ 200, 400 ]
+          size : [ 2.3, 8.4 ]
+          color : [ 0.8, 0.8, 0.4 ]
+      node.run22 : 
+          pos : [ 300, 400 ]
+          size : [ 2.3, 8.4 ]
+          color : [ 0.4, 0.4, 0.8 ]
+          note : |
+              Make directories before writing files
+      .preference : 
+          font : serif
+
+- order : [ run1, run11 ]
+- order : [ run2, run22 ]
+- order : [ run1, run22 ]
+- rm order : [ run1, run22 ]
+
+- link : [ 'run1.output', 'run22.thing' ]
+- link : [ 'run1.output', 'run11.thing' ]
+- rm link : run11.thing
